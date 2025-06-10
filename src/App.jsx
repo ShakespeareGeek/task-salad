@@ -15,6 +15,36 @@ export default function App() {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const intervalRef = useRef(null);
 
+  // Fun, encouraging call-to-action phrases
+const callToActionPhrases = [
+  "Ready to tackle",
+  "Let's dive into",
+  "Time to focus on",
+  "Let's crush",
+  "Ready to rock",
+  "Time to shine with",
+  "Let's make progress on",
+  "Ready to excel at",
+  "Time to dominate",
+  "Let's get after",
+  "Ready to master",
+  "Time to level up with",
+  "Let's conquer",
+  "Ready to succeed with",
+  "Time to thrive on"
+];
+
+// Get a consistent call-to-action for current task
+const getCurrentTaskDisplay = () => {
+  const task = tasks[currentTaskIndex];
+  const phraseIndex = (currentTaskIndex + task.length) % callToActionPhrases.length;
+  const phrase = callToActionPhrases[phraseIndex];
+  return (
+    <>
+      {phrase} <span className="text-yellow-200 font-bold">{task}</span>!
+    </>
+  );
+};
   // Use performance.now() or Date.now() for accurate timing that works in background tabs
   useEffect(() => {
     if (isRunning) {
@@ -247,14 +277,14 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Rotating Pomodoro</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Task Salad</h1>
           <div className="text-sm text-gray-600 mb-4">
             Task {currentTaskIndex + 1} of {tasks.length}
           </div>
           
           {/* Current Task Display */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-4 mb-6">
-            <h2 className="text-xl font-semibold">{tasks[currentTaskIndex]}</h2>
+            <h2 className="text-xl font-semibold">{getCurrentTaskDisplay()}</h2>
           </div>
 
           {/* Progress Ring */}
