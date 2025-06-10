@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Plus, X, Settings, Shuffle, GripVertical } from 'lucide-react';
 
 export default function App() {
-  const [tasks, setTasks] = useState(['Day Job', 'Startup', 'Chores', 'Self']);
+  const [tasks, setTasks] = useState(['Take Over The World', 'Train My Pet Dragon', 'Invent Time Travel', 'Become A Superhero']);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20 * 60); // 20 minutes in seconds
   const [isRunning, setIsRunning] = useState(false);
