@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  task-salad:
+    build: .
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    container_name: task-salad
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.task-salad.rule=Host(`task-salad.yourdomain.com`)"
+      - "traefik.http.routers.task-salad.tls=true"
+      - "traefik.http.routers.task-salad.tls.certresolver=letsencrypt"
