@@ -32,3 +32,26 @@ body {
   padding: 2rem;
   text-align: center;
 }
+
+/* Custom bounce animation that stops after a few bounces */
+@keyframes bounce-few {
+  0%, 10%, 25%, 40%, 50% {
+    transform: translateY(0);
+  }
+  5% {
+    transform: translateY(-20px);
+  }
+  15% {
+    transform: translateY(-15px);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+  45% {
+    transform: translateY(-5px);
+  }
+}
+
+.bounce-few {
+  animation: bounce-few 1.2s ease-out;
+}

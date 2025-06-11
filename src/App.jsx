@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, X, Settings, Shuffle, GripVertical } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, X, Settings, Shuffle, GripVertical, CheckCircle, SkipForward } from 'lucide-react';
 
-  // Enhanced local storage functions with error checking
+  
+// Enhanced local storage functions with error checking
 const saveToLocalStorage = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -68,6 +69,9 @@ const loadFromLocalStorage = (key, defaultValue) => {
 };
   
 export default function App() {
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+const [completedTaskName, setCompletedTaskName] = useState('');
+
   const [tasks, setTasks] = useState(() => 
     loadFromLocalStorage('taskSaladTasks', ['Solve World Hunger', 'Take Over the World', 'Train My Pet Dragon', 'Create the Perfect Pizza'])
   );
@@ -97,6 +101,17 @@ export default function App() {
   const [startTime, setStartTime] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const [currentCompleteEmoji, setCurrentCompleteEmoji] = useState(() => {
+    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
+    return completeEmojis[Math.floor(Math.random() * completeEmojis.length)];
+  });
+  
+  const [currentSkipEmoji, setCurrentSkipEmoji] = useState(() => {
+    const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+    return skipEmojis[Math.floor(Math.random() * skipEmojis.length)];
+  });
+
   const intervalRef = useRef(null);
 
   // Fun, encouraging call-to-action phrases
@@ -190,13 +205,18 @@ useEffect(() => {
     setIsRunning(false);
     const nextTaskIndex = (currentTaskIndex + 1) % tasks.length;
     
+    // Store completed task name and show modal
+    setCompletedTaskName(tasks[currentTaskIndex]);
+    setShowCompletionModal(true);
+    
     // Play notification sound
     playNotificationSound();
     
     // Show browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(`Time to switch to: ${tasks[nextTaskIndex]}`, {
-        body: `You've completed your ${tasks[currentTaskIndex]} session!`,
+      const nextTaskPhrase = callToActionPhrases[(nextTaskIndex + tasks[nextTaskIndex].length) % callToActionPhrases.length];
+      new Notification(`${nextTaskPhrase} ${tasks[nextTaskIndex]}!`, {
+        body: `You've completed your ${tasks[currentTaskIndex]} session! 🎉`,
         icon: '/favicon.ico'
       });
     }
@@ -206,6 +226,12 @@ useEffect(() => {
     setTimeLeft(newDuration);
     setTotalDuration(newDuration);
     setStartTime(null);
+    
+    // Pick new emojis for next session
+    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
+    const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+    setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
+    setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
   };
 
   const playNotificationSound = () => {
@@ -249,6 +275,75 @@ useEffect(() => {
         console.log('Audio notification not supported');
       });
     }
+  };
+
+const completeCurrentTask = () => {
+  // Store completed task name and show modal
+  setCompletedTaskName(tasks[currentTaskIndex]);
+  setShowCompletionModal(true);
+  
+  setIsRunning(false);
+  
+  // Play celebration sound
+  playNotificationSound();
+  
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(`Great job! 🎉`, {
+      body: `You completed ${tasks[currentTaskIndex]} early!`,
+      icon: '/favicon.ico'
+    });
+  }
+  
+  // Move to next task
+  const nextTaskIndex = (currentTaskIndex + 1) % tasks.length;
+  setCurrentTaskIndex(nextTaskIndex);
+  const newDuration = sessionDuration * 60;
+  setTimeLeft(newDuration);
+  setTotalDuration(newDuration);
+  setStartTime(null);
+  
+  // Pick new emojis for next session
+  const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
+  const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+  setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
+  setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
+};
+
+  const skipCurrentTask = () => {
+    setIsRunning(false);
+    
+    // Move to the task after next (skip one)
+    const skippedTaskIndex = (currentTaskIndex + 1) % tasks.length;
+    const nextTaskIndex = (currentTaskIndex + 2) % tasks.length;
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(`Skipped ${tasks[currentTaskIndex]}`, {
+        body: `Moving to ${tasks[nextTaskIndex]} instead`,
+        icon: '/favicon.ico'
+      });
+    }
+    
+    setCurrentTaskIndex(nextTaskIndex);
+    const newDuration = sessionDuration * 60;
+    setTimeLeft(newDuration);
+    setTotalDuration(newDuration);
+    setStartTime(null);
+
+    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
+  const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+  setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
+  setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
+
+  };
+  
+  const getRandomCompleteEmoji = () => {
+    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
+    return completeEmojis[Math.floor(Math.random() * completeEmojis.length)];
+  };
+  
+  const getRandomSkipEmoji = () => {
+    const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+    return skipEmojis[Math.floor(Math.random() * skipEmojis.length)];
   };
 
   const toggleTimer = () => {
@@ -449,6 +544,31 @@ useEffect(() => {
               <Settings size={20} />
             </button>
           </div>
+{/* Quick Actions Section */}
+<div className="border-t border-gray-200 pt-4 mb-4">
+  <h3 className="text-sm font-medium text-gray-600 mb-3 text-center">Quick Actions</h3>
+  <div className="flex justify-center">
+    {isRunning ? (
+      <button
+        onClick={completeCurrentTask}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-all"
+      >
+        <CheckCircle size={16} />
+        Done! {currentCompleteEmoji}
+
+      </button>
+    ) : (
+      <button
+        onClick={skipCurrentTask}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all"
+      >
+        <SkipForward size={16} />
+        Skip {currentSkipEmoji}
+
+      </button>
+    )}
+  </div>
+</div>
 
           {/* Next Task Preview */}
           <div className="text-sm text-gray-600">
@@ -456,6 +576,7 @@ useEffect(() => {
               {tasks[(currentTaskIndex + 1) % tasks.length]}
             </span>
           </div>
+          
         </div>
 
         {/* Settings Panel */}
@@ -560,6 +681,25 @@ useEffect(() => {
           </div>
         )}
       </div>
+      {/* Task Completion Modal */}
+{/* Task Completion Modal */}
+{showCompletionModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center bounce-few">
+      <div className="text-6xl mb-4">🎉</div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Time's Up!</h2>
+      <p className="text-lg text-gray-600 mb-1">You completed:</p>
+      <p className="text-xl font-semibold text-green-600 mb-4">{completedTaskName}</p>
+      <p className="text-gray-500 mb-6">Time for a well-deserved break! 🌟</p>
+      
+      <button
+        onClick={() => setShowCompletionModal(false)}
+        className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all"
+      >
+        Take a Break! ☕
+      </button>
     </div>
+  </div>
+)}    </div>
   );
 }
