@@ -69,6 +69,35 @@ const loadFromLocalStorage = (key, defaultValue) => {
 };
   
 export default function App() {
+  const [isOnBreak, setIsOnBreak] = useState(false);
+const [breakTimeLeft, setBreakTimeLeft] = useState(5 * 60); // 5 minute break
+const [breakStartTime, setBreakStartTime] = useState(null);
+const [breakDuration, setBreakDuration] = useState(5 * 60);
+const [breakCount, setBreakCount] = useState(() => 
+  loadFromLocalStorage('taskSaladBreakCount', 0)
+);
+const [lastBreakDate, setLastBreakDate] = useState(() => 
+  loadFromLocalStorage('taskSaladLastBreakDate', null)
+);
+const [currentBreakMessage, setCurrentBreakMessage] = useState(() => {
+  const breakActivities = [
+    "Stretch!",
+    "Find one thing on your desk that doesn't belong and put it away. Ah, sweet order.",
+    "Time for a victory lap!",
+    "Go hydrate! 🌱", 
+    "Dance Break! 💃",
+    "Take three slow, deep breaths. Inhale the good vibes, exhale the stress.",
+    "Look out the window 🪟",
+    "Engage in a staring contest with the nearest inanimate object. Don't let the stapler win.",
+    "Try to balance a pen on your nose.",      
+    "Rest your eyes. Look at something at least 20 feet away. No, your phone doesn't count.",
+    "Grab a healthy snack! 🍎",
+    "Give your hands a break. Wiggle your fingers, then gently stretch your wrists.",
+    "Think of one thing you're grateful for right now."
+  ];
+  return breakActivities[Math.floor(Math.random() * breakActivities.length)];
+});
+
   const [continuousBeeping, setContinuousBeeping] = useState(false);
 
   const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -135,6 +164,23 @@ const callToActionPhrases = [
   "Time to thrive on"
 ];
 
+const getBreakDuration = () => {
+  const today = new Date().toDateString();
+  
+  // Reset count if it's a new day or been more than 4 hours
+  if (lastBreakDate !== today) {
+    setBreakCount(0);
+    setLastBreakDate(today);
+    return 5 * 60; // 5 minutes for first break of the day
+  }
+  
+  // Every 4th break is longer
+  const nextBreakCount = breakCount + 1;
+  const isLongBreak = nextBreakCount % 4 === 0;
+  
+  return isLongBreak ? 10 * 60 : 5 * 60; // 10 minutes vs 5 minutes
+};
+
 // Get a consistent call-to-action for current task
 const getCurrentTaskDisplay = () => {
   const task = tasks[currentTaskIndex];
@@ -146,6 +192,38 @@ const getCurrentTaskDisplay = () => {
     </>
   );
 };
+// Save break count when it changes
+useEffect(() => {
+  saveToLocalStorage('taskSaladBreakCount', breakCount);
+}, [breakCount]);
+
+// Save last break date when it changes
+useEffect(() => {
+  saveToLocalStorage('taskSaladLastBreakDate', lastBreakDate);
+}, [lastBreakDate]);
+
+// Break timer logic
+useEffect(() => {
+  if (isOnBreak && breakStartTime) {
+    const breakInterval = setInterval(() => {
+      const now = performance.now();
+      const elapsed = Math.floor((now - breakStartTime) / 1000);
+      const remaining = Math.max(0, breakDuration - elapsed);
+      
+      setBreakTimeLeft(remaining);
+      
+      if (remaining === 0) {
+        // Break is over
+        setIsOnBreak(false);
+        setShowCompletionModal(false);
+        setBreakStartTime(null);
+        playNotificationSound(); // Single beep to indicate break is over
+      }
+    }, 100);
+    
+    return () => clearInterval(breakInterval);
+  }
+}, [isOnBreak, breakStartTime, breakDuration]);
 
 // Save tasks when they change
 useEffect(() => {
@@ -313,8 +391,25 @@ const completeCurrentTask = () => {
   // Pick new emojis for next session
   const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
   const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+  const breakActivities = [
+    "Stretch!",
+    "Find one thing on your desk that doesn't belong and put it away. Ah, sweet order.",
+    "Time for a victory lap!",
+    "Go hydrate! 🌱",
+    "Dance Break! 💃",
+    "Take three slow, deep breaths. Inhale the good vibes, exhale the stress.",
+    "Look out the window 🪟",
+    "Engage in a staring contest with the nearest inanimate object. Don't let the stapler win.",
+    "Try to balance a pen on your nose.",
+    "Rest your eyes. Look at something at least 20 feet away. No, your phone doesn't count.",
+    "Grab a healthy snack! 🍎",
+    "Give your hands a break. Wiggle your fingers, then gently stretch your wrists.",
+    "Think of one thing you're grateful for right now."
+  ];
+
   setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
   setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
+  setCurrentBreakMessage(breakActivities[Math.floor(Math.random() * breakActivities.length)]);
 };
 
   const skipCurrentTask = () => {
@@ -339,21 +434,26 @@ const completeCurrentTask = () => {
 
     const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
   const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
+  const breakActivities = [
+    "Stretch!",
+    "Find one thing on your desk that doesn't belong and put it away. Ah, sweet order.",
+    "Time for a victory lap!",
+    "Go hydrate! 🌱", 
+    "Dance Break! 💃",
+    "Take three slow, deep breaths. Inhale the good vibes, exhale the stress.",
+    "Look out the window 🪟",
+    "Engage in a staring contest with the nearest inanimate object. Don't let the stapler win.",
+    "Try to balance a pen on your nose.",      
+    "Rest your eyes. Look at something at least 20 feet away. No, your phone doesn't count.",
+    "Grab a healthy snack! 🍎",
+    "Give your hands a break. Wiggle your fingers, then gently stretch your wrists.",
+    "Think of one thing you're grateful for right now."
+  ];
   setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
   setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
-
+  setCurrentBreakMessage(breakActivities[Math.floor(Math.random() * breakActivities.length)]);
   };
   
-  const getRandomCompleteEmoji = () => {
-    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
-    return completeEmojis[Math.floor(Math.random() * completeEmojis.length)];
-  };
-  
-  const getRandomSkipEmoji = () => {
-    const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
-    return skipEmojis[Math.floor(Math.random() * skipEmojis.length)];
-  };
-
   const toggleTimer = () => {
     if (!isRunning) {
       // Starting the timer
@@ -598,7 +698,7 @@ const completeCurrentTask = () => {
                 Session Duration (minutes)
               </label>
               <div className="flex gap-2">
-                {[15, 20, 25, 30].map(minutes => (
+                {[1,15, 20, 25, 30].map(minutes => (
                   <button
                     key={minutes}
                     onClick={() => updateSessionDuration(minutes)}
@@ -689,25 +789,98 @@ const completeCurrentTask = () => {
           </div>
         )}
       </div>
-      {/* Task Completion Modal */}
-{/* Task Completion Modal */}
+        
+
 {showCompletionModal && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center bounce-few">
-      <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Time's Up!</h2>
-      <p className="text-lg text-gray-600 mb-1">You completed:</p>
-      <p className="text-xl font-semibold text-green-600 mb-4">{completedTaskName}</p>
-      <p className="text-gray-500 mb-6">Time for a well-deserved break! 🌟</p>
-      
-      <button
-        onClick={() => setShowCompletionModal(false)}
-        className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all"
-      >
-        Take a Break! ☕
-      </button>
+      {!isOnBreak ? (
+        // Completion celebration phase
+        <>
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Time's Up!</h2>
+          <p className="text-lg text-gray-600 mb-1">You completed:</p>
+          <p className="text-xl font-semibold text-green-600 mb-4">{completedTaskName}</p>
+          <p className="text-gray-500 mb-6">Time for a well-deserved break! 🌟</p>
+          
+          <button
+  onClick={() => {
+    stopContinuousBeeping();
+    setIsOnBreak(true);
+    setBreakStartTime(performance.now());
+    
+    // Calculate break duration and update count
+    const duration = getBreakDuration();
+    setBreakDuration(duration);
+    setBreakTimeLeft(duration);
+    
+    // Update break count and date
+    const today = new Date().toDateString();
+    setLastBreakDate(today);
+    setBreakCount(prev => prev + 1);
+  }}
+  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all"
+>
+  Start Break! ☕
+</button>
+        </>
+      ) : (
+        // Break countdown phase
+        <>
+          <div className="text-6xl mb-4">☕</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+  Break Time! {breakCount % 4 === 0 ? "(Long Break)" : `(Break ${breakCount % 4}/4)`}
+</h2>
+          <p className="text-lg text-green-600 mb-4">{currentBreakMessage}</p>
+          
+          {/* Break Timer Display */}
+          <div className="relative w-32 h-32 mx-auto mb-6">
+            <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                className="text-gray-200"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                stroke="currentColor"
+                strokeWidth="3"
+                fill="none"
+                strokeDasharray={`${2 * Math.PI * 45}`}
+                strokeDashoffset={`${2 * Math.PI * 45 * (1 - (breakDuration - breakTimeLeft) / breakDuration)}`}
+                className="text-blue-500 transition-all duration-300"
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-800">{formatTime(breakTimeLeft)}</div>
+                <div className="text-xs text-gray-500">break time</div>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => {
+              setIsOnBreak(false);
+              setShowCompletionModal(false);
+              setBreakStartTime(null);
+            }}
+            className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-all"
+          >
+            Skip Break 😅
+          </button>
+        </>
+      )}
     </div>
   </div>
-)}    </div>
+)}
+</div>
   );
 }
