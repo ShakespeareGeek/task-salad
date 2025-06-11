@@ -1,16 +1,100 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Plus, X, Settings, Shuffle, GripVertical } from 'lucide-react';
 
+  // Enhanced local storage functions with error checking
+const saveToLocalStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn('Failed to save to localStorage:', error);
+  }
+};
+
+const loadFromLocalStorage = (key, defaultValue) => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return defaultValue;
+    
+    const parsed = JSON.parse(saved);
+    
+    // Validate the data based on the key
+    if (key === 'taskSaladTasks') {
+      // Ensure it's an array with at least one valid task
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        console.warn('Invalid tasks data, using defaults');
+        return defaultValue;
+      }
+      // Filter out any invalid tasks (non-strings or empty strings)
+      const validTasks = parsed.filter(task => typeof task === 'string' && task.trim().length > 0);
+      if (validTasks.length === 0) {
+        console.warn('No valid tasks found, using defaults');
+        return defaultValue;
+      }
+      return validTasks;
+    }
+    
+    if (key === 'taskSaladCurrentIndex') {
+      // Ensure it's a valid number >= 0
+      if (typeof parsed !== 'number' || parsed < 0 || !Number.isInteger(parsed)) {
+        console.warn('Invalid currentTaskIndex, using 0');
+        return 0;
+      }
+      return parsed;
+    }
+    
+    if (key === 'taskSaladSessionDuration') {
+      // Ensure it's a valid session duration (5-120 minutes)
+      if (typeof parsed !== 'number' || parsed < 5 || parsed > 120) {
+        console.warn('Invalid sessionDuration, using default');
+        return defaultValue;
+      }
+      return parsed;
+    }
+    
+    if (key === 'taskSaladTimeLeft' || key === 'taskSaladTotalDuration') {
+      // Ensure it's a valid number >= 0
+      if (typeof parsed !== 'number' || parsed < 0) {
+        console.warn(`Invalid ${key}, using default`);
+        return defaultValue;
+      }
+      return parsed;
+    }
+    
+    return parsed;
+  } catch (error) {
+    console.warn('Failed to load from localStorage:', error);
+    return defaultValue;
+  }
+};
+  
 export default function App() {
-  const [tasks, setTasks] = useState(['Take Over The World', 'Train My Pet Dragon', 'Invent Time Travel', 'Become A Superhero']);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(20 * 60); // 20 minutes in seconds
+  const [tasks, setTasks] = useState(() => 
+    loadFromLocalStorage('taskSaladTasks', ['Solve World Hunger', 'Take Over the World', 'Train My Pet Dragon', 'Create the Perfect Pizza'])
+  );
+  const [currentTaskIndex, setCurrentTaskIndex] = useState(() => {
+    const savedTasks = loadFromLocalStorage('taskSaladTasks', ['Solve World Hunger', 'Take Over the World', 'Train My Pet Dragon', 'Create the Perfect Pizza']);
+    const savedIndex = loadFromLocalStorage('taskSaladCurrentIndex', 0);
+    
+    // Ensure the index is within bounds of the tasks array
+    return Math.min(savedIndex, savedTasks.length - 1);
+  });
+  const [sessionDuration, setSessionDuration] = useState(() => 
+    loadFromLocalStorage('taskSaladSessionDuration', 20)
+  );
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedDuration = loadFromLocalStorage('taskSaladSessionDuration', 20);
+    return loadFromLocalStorage('taskSaladTimeLeft', savedDuration * 60);
+  });
+  
+  const [totalDuration, setTotalDuration] = useState(() => {
+    const savedDuration = loadFromLocalStorage('taskSaladSessionDuration', 20);
+    return loadFromLocalStorage('taskSaladTotalDuration', savedDuration * 60);
+  });
+
   const [isRunning, setIsRunning] = useState(false);
-  const [sessionDuration, setSessionDuration] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
   const [newTask, setNewTask] = useState('');
   const [startTime, setStartTime] = useState(null);
-  const [totalDuration, setTotalDuration] = useState(20 * 60);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const intervalRef = useRef(null);
@@ -45,6 +129,22 @@ const getCurrentTaskDisplay = () => {
     </>
   );
 };
+
+// Save tasks when they change
+useEffect(() => {
+  saveToLocalStorage('taskSaladTasks', tasks);
+}, [tasks]);
+
+// Save current task index when it changes
+useEffect(() => {
+  saveToLocalStorage('taskSaladCurrentIndex', currentTaskIndex);
+}, [currentTaskIndex]);
+
+// Save session duration when it changes
+useEffect(() => {
+  saveToLocalStorage('taskSaladSessionDuration', sessionDuration);
+}, [sessionDuration]);
+
   // Use performance.now() or Date.now() for accurate timing that works in background tabs
   useEffect(() => {
     if (isRunning) {
@@ -407,7 +507,7 @@ const getCurrentTaskDisplay = () => {
                   value={newTask}
                   onChange={(e) => setNewTask(e.target.value)}
                   placeholder="Add new task..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && addTask()}
                 />
                 <button
