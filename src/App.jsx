@@ -69,6 +69,8 @@ const loadFromLocalStorage = (key, defaultValue) => {
 };
   
 export default function App() {
+  const [continuousBeeping, setContinuousBeeping] = useState(false);
+
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 const [completedTaskName, setCompletedTaskName] = useState('');
 
@@ -234,49 +236,55 @@ useEffect(() => {
     setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
   };
 
-  const playNotificationSound = () => {
-    // Create a simple notification beep using Web Audio API
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const playNotificationSound = () => {
+  // Create a simple notification beep using Web Audio API
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Create a sequence of beeps
+    const playBeep = (frequency, startTime, duration) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
       
-      // Create a sequence of beeps
-      const playBeep = (frequency, startTime, duration) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(frequency, startTime);
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-        
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-      };
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
       
-      const now = audioContext.currentTime;
-      // Play three pleasant beeps
-      playBeep(800, now, 0.15);
-      playBeep(1000, now + 0.2, 0.15);
-      playBeep(1200, now + 0.4, 0.15);
+      oscillator.frequency.setValueAtTime(frequency, startTime);
+      oscillator.type = 'sine';
       
-    } catch (error) {
-      // Fallback: try to play a simple beep
-      console.log('Web Audio API not supported, trying fallback sound');
-      // This creates a very short beep sound as fallback
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjNFHCurkKIuaa+4fJOLiq6Yrqx3YWTGX1RRKyuRgJ+knK6UrKpfYmLrX1NVJSuYf5qjnq6TqapdYWXsX1BbIyuhf5monK6RpKpcYmfvX05hICujfpOonq6PnqlaYmnyX0xdIyyjfZGonL6MnKhYY2rzX0paJCumfI+pn66Ek6dUZGvwY01XIy2ofY2qn7mKoKRUY2/4Y0tVJy6qfYyrn7eHo6NQY3H/YklWJy6rfoirnrWGoaFNZHNEYkhVJjCtf4eun66CnZ9KZHVFYkZYJzKugIWum6eCnZ5HZHhJYkZYKjKvgYKvmKmDmpxFZXtNY0NZKjOwgoGulaeCmp1CZn5QYkFbKjW0goGukKaFmJlAZ4FVYUJRKDW1g3+ui6eGmJg8aIRZYEJUKjW2hHyuiqmMmJY6aYZcX0JULDa7hHuokKqNmZU4aoldX0FYLTe9hXqpiKqPmpU2a4xhX0FYLjfChHaniayUmZM0a49kX0FaLjfCg3akjq2UmZM0a5BnX0FaLjfCg3ajjq2UmZM0a5BqX0FcLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfBg3ajjq2UmZM0a5BnX0FbLjfBg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3WjjqyTmZM0a5BoXEFbLjfEg3SjjqySmZI0a5BpXEFdLjfFg3OjjauSmZI0a5BoXUFdLjfGg3Ijjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3aijq2VmZMza5FnX0FbLjfDhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZM=');
-      audio.volume = 0.3;
-      audio.play().catch(() => {
-        // If audio fails, at least log that we tried
-        console.log('Audio notification not supported');
-      });
-    }
-  };
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+    
+    const now = audioContext.currentTime;
+    // Play three pleasant beeps
+    playBeep(800, now, 0.15);
+    playBeep(1000, now + 0.2, 0.15);
+    playBeep(1200, now + 0.4, 0.15);
+    
+  } catch (error) {
+    // Fallback: try to play a simple beep
+    console.log('Web Audio API not supported, trying fallback sound');
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjNFHCurkKIuaa+4fJOLiq6Yrqx3YWTGX1RRKyuRgJ+knK6UrKpfYmLrX1NVJSuYf5qjnq6TqapdYWXsX1BbIyuhf5monK6RpKpcYmfvX05hICujfpOonq6PnqlaYmnyX0xdIyyjfZGonL6MnKhYY2rzX0paJCumfI+pn66Ek6dUZGvwY01XIy2ofY2qn7mKoKRUY2/4Y0tVJy6qfYyrn7eHo6NQY3H/YklWJy6rfoirnrWGoaFNZHNEYkhVJjCtf4eun66CnZ9KZHVFYkZYJzKugIWum6eCnZ5HZHhJYkZYKjKvgYKvmKmDmpxFZXtNY0NZKjOwgoGulaeCmp1CZn5QYkFbKjW0goGukKaFmJlAZ4FVYUJRKDW1g3+ui6eGmJg8aIRZYEJUKjW2hHyuiqmMmJY6aYZcX0JULDa7hHuokKqNmZU4aoldX0FYLTe9hXqpiKqPmpU2a4xhX0FYLjfChHaniayUmZM0a49kX0FaLjfCg3akjq2UmZM0a5BnX0FaLjfCg3ajjq2UmZM0a5BqX0FcLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfBg3ajjq2UmZM0a5BnX0FbLjfBg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3WjjqyTmZM0a5BoXEFbLjfEg3SjjqySmZI0a5BpXEFdLjfFg3OjjauSmZI0a5BoXUFdLjfGg3Ijjq2UmZM0a5BnX0FbLjfDg3ajjq2UmZM0a5BnX0FbLjfDg3aijq2VmZMza5FnX0FbLjfDhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZMza5FnX0FbLjfEhHaijq2VmZM=');
+    audio.volume = 0.3;
+    audio.play().catch(() => {
+      console.log('Audio notification not supported');
+    });
+  }
+};
 
+const startContinuousBeeping = () => {
+  setContinuousBeeping(true);
+  playNotificationSound();
+};
+
+const stopContinuousBeeping = () => {
+  setContinuousBeeping(false);
+};
 const completeCurrentTask = () => {
   // Store completed task name and show modal
   setCompletedTaskName(tasks[currentTaskIndex]);
