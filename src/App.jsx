@@ -281,6 +281,22 @@ useEffect(() => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isRunning, startTime, totalDuration]);
 
+  useEffect(() => {
+    let beepInterval;
+    
+    if (continuousBeeping) {
+      beepInterval = setInterval(() => {
+        playNotificationSound();
+      }, 3000); // Beep every 3 seconds
+    }
+    
+    return () => {
+      if (beepInterval) {
+        clearInterval(beepInterval);
+      }
+    };
+  }, [continuousBeeping]);
+
   const handleTaskComplete = () => {
     setIsRunning(false);
     const nextTaskIndex = (currentTaskIndex + 1) % tasks.length;
@@ -290,7 +306,7 @@ useEffect(() => {
     setShowCompletionModal(true);
     
     // Play notification sound
-    playNotificationSound();
+    startContinuousBeeping();
     
     // Show browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -372,7 +388,7 @@ const completeCurrentTask = () => {
   
   // Play celebration sound
   playNotificationSound();
-  
+
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(`Great job! 🎉`, {
       body: `You completed ${tasks[currentTaskIndex]} early!`,
@@ -736,9 +752,10 @@ const completeCurrentTask = () => {
                   value={newTask}
                   onChange={(e) => setNewTask(e.target.value)}
                   placeholder="Add new task..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 border bg-white border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && addTask()}
                 />
+                
                 <button
                   onClick={addTask}
                   className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all"
