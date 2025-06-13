@@ -69,11 +69,12 @@ const loadFromLocalStorage = (key, defaultValue) => {
 };
   
 export default function App() {
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isOnBreak, setIsOnBreak] = useState(false);
-const [breakTimeLeft, setBreakTimeLeft] = useState(5 * 60); // 5 minute break
-const [breakStartTime, setBreakStartTime] = useState(null);
-const [breakDuration, setBreakDuration] = useState(5 * 60);
-const [breakCount, setBreakCount] = useState(() => 
+  const [breakTimeLeft, setBreakTimeLeft] = useState(5 * 60); // 5 minute break
+  const [breakStartTime, setBreakStartTime] = useState(null);
+  const [breakDuration, setBreakDuration] = useState(5 * 60);
+  const [breakCount, setBreakCount] = useState(() => 
   loadFromLocalStorage('taskSaladBreakCount', 0)
 );
 const [lastBreakDate, setLastBreakDate] = useState(() => 
@@ -192,6 +193,26 @@ const getCurrentTaskDisplay = () => {
     </>
   );
 };
+
+useEffect(() => {
+  // Initialize Google Analytics
+  if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){window.dataLayer.push(arguments);}
+    window.gtag = gtag; // Make gtag available globally
+    gtag('js', new Date());
+    gtag('config', import.meta.env.VITE_GA_MEASUREMENT_ID);
+  }
+}, []);
+
+useEffect(() => {
+  // Check if this is the user's first time
+  const hasVisited = localStorage.getItem('taskSaladHasVisited');
+  if (!hasVisited) {
+    setShowWelcomeModal(true);
+    localStorage.setItem('taskSaladHasVisited', 'true');
+  }
+}, []);
 // Save break count when it changes
 useEffect(() => {
   saveToLocalStorage('taskSaladBreakCount', breakCount);
@@ -213,13 +234,12 @@ useEffect(() => {
       setBreakTimeLeft(remaining);
       
       if (remaining === 0) {
-        // Break is over
-        setIsOnBreak(false);
-        setShowCompletionModal(false);
+        console.log('Break time is over');
+        // Break is over - start continuous beeping
         setBreakStartTime(null);
-        playNotificationSound(); // Single beep to indicate break is over
+        startContinuousBeeping(); // Start continuous beeping instead of single beep
       }
-    }, 100);
+        }, 100);
     
     return () => clearInterval(breakInterval);
   }
@@ -323,9 +343,6 @@ useEffect(() => {
     setTotalDuration(newDuration);
     setStartTime(null);
     
-    // Pick new emojis for next session
-    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
-    const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
     setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
     setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
   };
@@ -404,25 +421,6 @@ const completeCurrentTask = () => {
   setTotalDuration(newDuration);
   setStartTime(null);
   
-  // Pick new emojis for next session
-  const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
-  const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
-  const breakActivities = [
-    "Stretch!",
-    "Find one thing on your desk that doesn't belong and put it away. Ah, sweet order.",
-    "Time for a victory lap!",
-    "Go hydrate! 🌱",
-    "Dance Break! 💃",
-    "Take three slow, deep breaths. Inhale the good vibes, exhale the stress.",
-    "Look out the window 🪟",
-    "Engage in a staring contest with the nearest inanimate object. Don't let the stapler win.",
-    "Try to balance a pen on your nose.",
-    "Rest your eyes. Look at something at least 20 feet away. No, your phone doesn't count.",
-    "Grab a healthy snack! 🍎",
-    "Give your hands a break. Wiggle your fingers, then gently stretch your wrists.",
-    "Think of one thing you're grateful for right now."
-  ];
-
   setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
   setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
   setCurrentBreakMessage(breakActivities[Math.floor(Math.random() * breakActivities.length)]);
@@ -448,23 +446,6 @@ const completeCurrentTask = () => {
     setTotalDuration(newDuration);
     setStartTime(null);
 
-    const completeEmojis = ['😊', '🎉', '✨', '💪', '🚀', '👏', '🌟', '😄', '🎊', '💫'];
-  const skipEmojis = ['😔', '😐', '😅', '🤷‍♀️', '🤷‍♂️', '😬', '🙃', '😕', '🤪', '😵‍💫'];
-  const breakActivities = [
-    "Stretch!",
-    "Find one thing on your desk that doesn't belong and put it away. Ah, sweet order.",
-    "Time for a victory lap!",
-    "Go hydrate! 🌱", 
-    "Dance Break! 💃",
-    "Take three slow, deep breaths. Inhale the good vibes, exhale the stress.",
-    "Look out the window 🪟",
-    "Engage in a staring contest with the nearest inanimate object. Don't let the stapler win.",
-    "Try to balance a pen on your nose.",      
-    "Rest your eyes. Look at something at least 20 feet away. No, your phone doesn't count.",
-    "Grab a healthy snack! 🍎",
-    "Give your hands a break. Wiggle your fingers, then gently stretch your wrists.",
-    "Think of one thing you're grateful for right now."
-  ];
   setCurrentCompleteEmoji(completeEmojis[Math.floor(Math.random() * completeEmojis.length)]);
   setCurrentSkipEmoji(skipEmojis[Math.floor(Math.random() * skipEmojis.length)]);
   setCurrentBreakMessage(breakActivities[Math.floor(Math.random() * breakActivities.length)]);
@@ -480,6 +461,15 @@ const completeCurrentTask = () => {
       setStartTime(now);
       setTotalDuration(timeLeft);
       setIsRunning(true);
+
+       // Track Google Analytics event
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'start_timer', {
+          event_category: 'timer',
+          event_label: tasks[currentTaskIndex],
+          value: sessionDuration
+        });
+      }
     } else {
       // Pausing the timer - update timeLeft to current remaining time
       const now = performance.now();
@@ -662,51 +652,28 @@ const completeCurrentTask = () => {
             </button>
             
             <button
-              onClick={() => setShowSettings(!showSettings)}
+onClick={() => {
+  setShowSettings(!showSettings);
+  // Scroll to settings when opened
+  if (!showSettings) {
+    setTimeout(() => {
+      const settingsElement = document.getElementById('settings-panel');
+      if (settingsElement) {
+        settingsElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 100);
+  }
+}}
               className="flex items-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-all"
             >
               <Settings size={20} />
             </button>
           </div>
-{/* Quick Actions Section */}
-<div className="border-t border-gray-200 pt-4 mb-4">
-  <h3 className="text-sm font-medium text-gray-600 mb-3 text-center">Quick Actions</h3>
-  <div className="flex justify-center">
-    {isRunning ? (
-      <button
-        onClick={completeCurrentTask}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-all"
-      >
-        <CheckCircle size={16} />
-        Done! {currentCompleteEmoji}
 
-      </button>
-    ) : (
-      <button
-        onClick={skipCurrentTask}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all"
-      >
-        <SkipForward size={16} />
-        Skip {currentSkipEmoji}
-
-      </button>
-    )}
-  </div>
-</div>
-
-          {/* Next Task Preview */}
-          <div className="text-sm text-gray-600">
-            Up next: <span className="font-semibold text-indigo-600">
-              {tasks[(currentTaskIndex + 1) % tasks.length]}
-            </span>
-          </div>
-          
-        </div>
-
-        {/* Settings Panel */}
+                  {/* Settings Panel */}
         {showSettings && (
-          <div className="border-t pt-6 mt-6">
-            <h3 className="text-lg font-semibold mb-4">Settings</h3>
+          <div id="settings-panel" className="border border-gray-200 bg-gray-50 rounded-xl p-4 mb-6 animate-in slide-in-from-top duration-300">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">Settings</h3>
             
             {/* Session Duration */}
             <div className="mb-4">
@@ -714,7 +681,7 @@ const completeCurrentTask = () => {
                 Session Duration (minutes)
               </label>
               <div className="flex gap-2">
-                {[1,15, 20, 25, 30].map(minutes => (
+                {[15, 20, 25, 30].map(minutes => (
                   <button
                     key={minutes}
                     onClick={() => updateSessionDuration(minutes)}
@@ -805,6 +772,43 @@ const completeCurrentTask = () => {
             </div>
           </div>
         )}
+
+{/* Quick Actions Section */}
+<div className="border-t border-gray-200 pt-4 mb-4">
+  <h3 className="text-sm font-medium text-gray-600 mb-3 text-center">Quick Actions</h3>
+  <div className="flex justify-center">
+    {isRunning ? (
+      <button
+        onClick={completeCurrentTask}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-all"
+      >
+        <CheckCircle size={16} />
+        Done! {currentCompleteEmoji}
+
+      </button>
+    ) : (
+      <button
+        onClick={skipCurrentTask}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all"
+      >
+        <SkipForward size={16} />
+        Skip {currentSkipEmoji}
+
+      </button>
+    )}
+  </div>
+</div>
+
+{/* Next Task Preview */}
+{tasks.length > 1 && (
+  <div className="text-sm text-gray-600">
+    Up next: <span className="font-semibold text-indigo-600">
+      {tasks[(currentTaskIndex + 1) % tasks.length]}
+    </span>
+  </div>
+)}          
+        </div>
+
       </div>
         
 
@@ -843,58 +847,99 @@ const completeCurrentTask = () => {
         </>
       ) : (
         // Break countdown phase
-        <>
-          <div className="text-6xl mb-4">☕</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-  Break Time! {breakCount % 4 === 0 ? "(Long Break)" : `(Break ${breakCount % 4}/4)`}
-</h2>
-          <p className="text-lg text-green-600 mb-4">{currentBreakMessage}</p>
-          
-          {/* Break Timer Display */}
-          <div className="relative w-32 h-32 mx-auto mb-6">
-            <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-                className="text-gray-200"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="3"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 45}`}
-                strokeDashoffset={`${2 * Math.PI * 45 * (1 - (breakDuration - breakTimeLeft) / breakDuration)}`}
-                className="text-blue-500 transition-all duration-300"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-800">{formatTime(breakTimeLeft)}</div>
-                <div className="text-xs text-gray-500">break time</div>
-              </div>
-            </div>
+        // Break countdown phase
+<>
+  {breakTimeLeft > 0 ? (
+    // Still on break
+    <>
+      <div className="text-6xl mb-4">☕</div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Break Time!</h2>
+      <p className="text-lg text-green-600 mb-4">{currentBreakMessage}</p>
+      
+      {/* Break Timer Display */}
+      <div className="relative w-32 h-32 mx-auto mb-6">
+        <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="45"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            className="text-gray-200"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="45"
+            stroke="currentColor"
+            strokeWidth="3"
+            fill="none"
+            strokeDasharray={`${2 * Math.PI * 45}`}
+            strokeDashoffset={`${2 * Math.PI * 45 * (1 - (breakDuration - breakTimeLeft) / breakDuration)}`}
+            className="text-blue-500 transition-all duration-300"
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-800">{formatTime(breakTimeLeft)}</div>
+            <div className="text-xs text-gray-500">break time</div>
           </div>
-          
-          <button
-            onClick={() => {
-              setIsOnBreak(false);
-              setShowCompletionModal(false);
-              setBreakStartTime(null);
-            }}
-            className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-all"
-          >
-            Skip Break 😅
-          </button>
-        </>
+        </div>
+      </div>
+      
+      <button
+        onClick={() => {
+          setIsOnBreak(false);
+          setShowCompletionModal(false);
+          setBreakStartTime(null);
+        }}
+        className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-all"
+      >
+        Skip Break 😅
+      </button>
+    </>
+  ) : (
+    // Break is over - show "Break's Over" state
+    <>
+      <div className="text-6xl mb-4 animate-bounce">⏰</div>
+      <h2 className="text-2xl font-bold text-red-600 mb-2">Break's Over!</h2>
+      <p className="text-lg text-gray-600 mb-4">Time to get back to work! 💪</p>
+      <p className="text-sm text-gray-500 mb-6">Ready for your next task?</p>
+      
+      <button
+        onClick={() => {
+          stopContinuousBeeping();
+          setIsOnBreak(false);
+          setShowCompletionModal(false);
+        }}
+        className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all animate-pulse"
+      >
+        Back to Work! 🚀
+      </button>
+    </>
+  )}
+</>
       )}
+    </div>
+  </div>
+)}
+{showWelcomeModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+      <div className="text-6xl mb-4">🥗</div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Task Salad!</h2>
+      <p className="text-gray-600 mb-4">
+        A focused work pomodoro timer that helps you tackle multiple tasks one at a time. 
+        Pick your tasks, set your session duration, and enjoy your well-earned breaks. Time to get productive!
+      </p>
+      <button
+        onClick={() => setShowWelcomeModal(false)}
+        className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl transition-all"
+      >
+        Let's Get Started! 🚀
+      </button>
     </div>
   </div>
 )}

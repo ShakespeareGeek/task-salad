@@ -46,3 +46,8 @@ pids
 
 # Docker
 .dockerignore
+
+# env
+.env
+.env.local
+.env.production
