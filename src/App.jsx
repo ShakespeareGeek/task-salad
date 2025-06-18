@@ -430,8 +430,7 @@ const completeCurrentTask = () => {
     setIsRunning(false);
     
     // Move to the task after next (skip one)
-    const skippedTaskIndex = (currentTaskIndex + 1) % tasks.length;
-    const nextTaskIndex = (currentTaskIndex + 2) % tasks.length;
+    const nextTaskIndex = (currentTaskIndex + 1) % tasks.length;
     
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(`Skipped ${tasks[currentTaskIndex]}`, {
